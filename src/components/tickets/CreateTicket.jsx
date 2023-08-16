@@ -1,26 +1,27 @@
 import React, { useContext, useState } from 'react'
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import { makeStyles } from "@mui/styles";
 import AccountContext from '../../Context/AccountContext';
+import UserPool from '../../State/UserPool';
+import Sidebar from '../sidebar/Sidebar';
+import Navbar from '../navbar/Navbar';
+import '../style.css';
+
+
+
 
 const CreateTicket = () => {
     const context = useContext(AccountContext)
-    const { logout } = context;
     const navigate = useNavigate();
+    const user = UserPool.getCurrentUser();
 
-    const logoutUser = () => {
-        logout().then(data => {
-            console.log("User successfully logged out!");
-            navigate("/login")
-        }).catch(err => {
-            console.log(err);
-        })
-    }
     const [ticketData, setTicketData] = useState({
         subject: '',
-        reporter: '',
+        reporter: user?.storage.name || '',
         description: '',
         assignee: '',
+        userId: user?.username || '',
         timestamp: '',
     });
     const baseUrl = "https://c3lxl5iiuk.execute-api.us-east-1.amazonaws.com/prod"
@@ -32,8 +33,7 @@ const CreateTicket = () => {
     const createTicket = async (ticketData) => {
         try {
             const response = await axios.post(`${baseUrl}/ticket`, ticketData);
-            console.log('Ticket created:', response.data);
-            // Handle the response or perform additional actions
+            console.log('Ticket created:', response.data)
         } catch (error) {
             console.error('Error creating ticket:', error);
         }
@@ -41,55 +41,60 @@ const CreateTicket = () => {
 
     const saveTicket = async (e) => {
         e.preventDefault();
-        // Call the createTicket function with the ticketData
         await createTicket(ticketData);
     };
 
-
+    const options = ["Open", "In Progress", "Resolved", "Closed"]
     return (
-        <div>
-            <h1>Create Ticket</h1>
-            <form onSubmit={saveTicket}>
-                <label htmlFor="subject">Subject:</label>
-                <input
-                    type="text"
-                    id="subject"
-                    name="subject"
-                    value={ticketData.subject}
-                    onChange={handleChange}
-                />
+        <div className='container'>
+            <div className='sidebarContainer'>
+                <Sidebar />
+            </div>
+            <div className='pageContent'>
+                <Navbar />
+                <div className='header'>
+                    <h1>Add Ticket</h1>
+                </div>
+                <form onSubmit={saveTicket}>
+                    <label htmlFor="subject">Subject:</label>
+                    <input
+                        type="text"
+                        name="subject"
+                        value={ticketData.subject}
+                        onChange={handleChange}
+                        required
+                    />
+                    <label htmlFor="status">Status:</label>
+                    <select
+                        value={ticketData.status}
+                        onChange={handleChange}
+                        name="status"
+                        required
+                    >
+                        {options.map((option) => (
+                            <option key={option} value={option}>{option}</option>
+                        ))}
+                    </select>
+                    <label htmlFor="description">Description:</label>
+                    <textarea
+                        name="description"
+                        value={ticketData.description}
+                        onChange={handleChange}
+                    />
 
-                <label htmlFor="reporter">Reporter:</label>
-                <input
-                    type="text"
-                    id="reporter"
-                    name="reporter"
-                    value={ticketData.reporter}
-                    onChange={handleChange}
-                />
+                    <label htmlFor="assignee">Assignee:</label>
+                    <input
+                        type="text"
+                        name="assignee"
+                        value={ticketData.assignee}
+                        onChange={handleChange}
+                    />
 
-                <label htmlFor="description">Description:</label>
-                <textarea
-                    id="description"
-                    name="description"
-                    value={ticketData.description}
-                    onChange={handleChange}
-                ></textarea>
-
-                <label htmlFor="assignee">Assignee:</label>
-                <input
-                    type="text"
-                    id="assignee"
-                    name="assignee"
-                    value={ticketData.assignee}
-                    onChange={handleChange}
-                />
-
-                <button type="submit">Create Ticket</button>
-                <button type="button" onClick={logoutUser}>Logout</button>
-            </form>
+                    <button className="form-button" type="submit">Create Ticket</button>
+                </form>
+            </div>
         </div>
-    )
+    );
 }
 
 export default CreateTicket
